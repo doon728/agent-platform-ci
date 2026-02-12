@@ -1,15 +1,12 @@
 name: python-agent-tools-ci
-
 on:
   workflow_call:
-
 jobs:
   ci:
     runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
-
     strategy:
       matrix:
         service:
@@ -17,48 +14,39 @@ jobs:
             path: services/agent-runtime
           - name: tool-gateway
             path: services/tool-gateway
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-
       - name: Install Poetry
         run: pip install poetry
-
       - name: Install deps
         working-directory: ${{ matrix.service.path }}
-        run: poetry install --no-root
-
+        run: |
+          poetry install --no-root
+          poetry add pyyaml  # Explicitly add PyYAML
       - name: Lint
         working-directory: ${{ matrix.service.path }}
         run: poetry run ruff check .
-
       - name: Tests
         working-directory: ${{ matrix.service.path }}
         run: poetry run pytest
-
-      - name: Build Docker image
-        run: |
-          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
-          docker build -t $IMAGE:latest ${{ matrix.service.path }}
-
-      - name: Log in to GHCR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.repository, 'doon728/tmpl-')
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: Push Docker image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.repository, 'doon728/tmpl-')
-        run: |
-          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
-
       - name: Test Configuration Loading
         working-directory: services/agent-runtime
         run: |
           poetry run python tests/test_config_manual.py
-                docker push $IMAGE:latest
-
+      - name: Build Docker image
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
+          docker build -t $IMAGE:latest ${{ matrix.service.path }}
+      - name: Log in to GHCR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.repository, 'doon728/tmpl-')
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Push Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && !startsWith(github.repository, 'doon728/tmpl-')
+        run: |
+          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
+          docker push $IMAGE:latest
