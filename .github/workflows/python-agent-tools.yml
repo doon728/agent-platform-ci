@@ -27,7 +27,11 @@ jobs:
         working-directory: ${{ matrix.service.path }}
         run: |
           poetry install --no-root
-          poetry add pyyaml  # Explicitly add PyYAML
+          poetry run pip install pyyaml  # Use pip to ensure installation
+      - name: Debug PyYAML Installation
+        working-directory: ${{ matrix.service.path }}
+        run: |
+          poetry run python -c "import yaml; print(yaml.__version__)"
       - name: Lint
         working-directory: ${{ matrix.service.path }}
         run: poetry run ruff check .
