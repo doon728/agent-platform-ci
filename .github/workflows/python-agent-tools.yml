@@ -73,5 +73,9 @@ jobs:
       - name: Push Docker image
         if: inputs.push_images == true
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
+          IMAGE_RAW="ghcr.io/${{ github.repository }}-${{ matrix.service.name }}"
+          IMAGE=$(echo "$IMAGE_RAW" | tr '[:upper:]' '[:lower:]')
+
+          echo "Pushing image: $IMAGE"
           docker push $IMAGE:latest
+
