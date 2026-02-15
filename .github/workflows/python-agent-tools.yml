@@ -56,7 +56,11 @@ jobs:
 
       - name: Build Docker image
         run: |
-          IMAGE=ghcr.io/${{ github.repository }}-${{ matrix.service.name }}
+          IMAGE_RAW="ghcr.io/${{ github.repository }}-${{ matrix.service.name }}"
+          IMAGE=$(echo "$IMAGE_RAW" | tr '[:upper:]' '[:lower:]')
+      
+          echo "Building image: $IMAGE"
+      
           docker build \
             -t $IMAGE:latest \
             -f ${{ matrix.service.path }}/Dockerfile \
